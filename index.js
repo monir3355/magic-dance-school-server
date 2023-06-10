@@ -48,6 +48,7 @@ async function run() {
     const instructorCollection = client
       .db("magicDanceArts")
       .collection("instructors");
+    const classCollection = client.db("magicDanceArts").collection("classes");
 
     // jwt
     app.post("/jwt", (req, res) => {
@@ -70,6 +71,11 @@ async function run() {
         res.send({ message: "User already exist!" });
       }
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+    // classes
+    app.get("/classes", async (req, res) => {
+      const result = await classCollection.find().toArray();
       res.send(result);
     });
 
