@@ -157,12 +157,70 @@ async function run() {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
+
+    // get your all class by email
+    app.get("/classes/instructor/:email", async (req, res) => {
+      const result = await classCollection
+        .find({ email: req.params.email })
+        .toArray();
+      res.send(result);
+    });
     // class post
     app.post("/classes", verifyJWT, verifyInstructors, async (req, res) => {
       const addClass = req.body;
       const insertResult = await classCollection.insertOne(addClass);
       res.send(insertResult);
     });
+
+    // classes approved
+    app.patch("/classes/approved/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const insertResult = await classCollection.updateOne(filter, updatedDoc);
+      res.send(insertResult);
+    });
+
+    // classes denied
+    app.patch("/classes/denied/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: "denied",
+        },
+      };
+      const insertResult = await classCollection.updateOne(filter, updatedDoc);
+      res.send(insertResult);
+    });
+
+    // classes feedback
+    app.patch("/classes/feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const feedback = req.body.feedback; // Assuming the feedback is sent in the request body
+
+      const updatedDoc = {
+        $set: {
+          feedback: feedback,
+        },
+      };
+
+      try {
+        const insertResult = await classCollection.updateOne(
+          filter,
+          updatedDoc
+        );
+        res.send(insertResult);
+      } catch (error) {
+        res.status(500).send("Error updating feedback");
+      }
+    });
+
     // Instructors
     app.get("/instructors", async (req, res) => {
       const result = await instructorCollection.find().toArray();
