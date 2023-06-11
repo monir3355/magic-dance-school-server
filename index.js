@@ -101,7 +101,7 @@ async function run() {
         res.send(result);
       }
     });
-    // jwt email check the user
+    // jwt email check the instructor
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       if (req.decoded.email !== email) {
@@ -109,6 +109,16 @@ async function run() {
       }
       const user = await userCollection.findOne({ email: email });
       const insertResult = { admin: user?.role === "admin" };
+      res.send(insertResult);
+    });
+    // jwt email check the instructor
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ instructor: false });
+      }
+      const user = await userCollection.findOne({ email: email });
+      const insertResult = { instructor: user?.role === "instructor" };
       res.send(insertResult);
     });
     // set admin here
