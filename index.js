@@ -28,7 +28,7 @@ const verifyJWT = (req, res, next) => {
   });
 };
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ztxo0js.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -58,7 +58,34 @@ async function run() {
       });
       res.send({ token });
     });
-    app.get("/users", async (req, res) => {
+
+    // verify jwt admin
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      if (user?.role !== "admin") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden message" });
+      }
+      next();
+    };
+    // verify jwt Instructors
+    const verifyInstructors = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      if (user?.role !== "instructor") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden message" });
+      }
+      next();
+    };
+
+    // user
+    app.get("/users", verifyJWT, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
@@ -68,11 +95,53 @@ async function run() {
       const query = { email: user.email };
       const existingUser = await userCollection.findOne(query);
       if (existingUser) {
-        res.send({ message: "User already exist!" });
+        res.status(400).send({ message: "User already exists!" });
+      } else {
+        const result = await userCollection.insertOne(user);
+        res.send(result);
       }
-      const result = await userCollection.insertOne(user);
-      res.send(result);
     });
+    // jwt email check the user
+    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      if (req.decoded.email !== email) {
+        res.send({ admin: false });
+      }
+      const user = await userCollection.findOne({ email: email });
+      const insertResult = { admin: user?.role === "admin" };
+      res.send(insertResult);
+    });
+    // set admin here
+    app.patch("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const insertResult = await userCollection.updateOne(filter, updatedDoc);
+      res.send(insertResult);
+    });
+    app.patch("/users/instructor/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: "instructor",
+        },
+      };
+      const insertResult = await userCollection.updateOne(filter, updatedDoc);
+      res.send(insertResult);
+    });
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const insertResult = await userCollection.deleteOne(query);
+      res.send(insertResult);
+    });
+
     // classes
     app.get("/classes", async (req, res) => {
       const result = await classCollection.find().toArray();
