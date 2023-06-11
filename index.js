@@ -157,7 +157,12 @@ async function run() {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
-
+    // class post
+    app.post("/classes", verifyJWT, verifyInstructors, async (req, res) => {
+      const addClass = req.body;
+      const insertResult = await classCollection.insertOne(addClass);
+      res.send(insertResult);
+    });
     // Instructors
     app.get("/instructors", async (req, res) => {
       const result = await instructorCollection.find().toArray();
