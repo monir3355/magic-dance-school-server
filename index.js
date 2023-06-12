@@ -3,6 +3,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
+const stripe = require("stripe")(process.env.PAYMENT_GETWAY_KEY);
 const port = process.env.PORT || 5000;
 
 // middle ware
@@ -45,10 +46,17 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const userCollection = client.db("magicDanceArts").collection("users");
+
+    const paymentCollection = client
+      .db("magicDanceArts")
+      .collection("payments");
+
     const instructorCollection = client
       .db("magicDanceArts")
       .collection("instructors");
+
     const classCollection = client.db("magicDanceArts").collection("classes");
+
     const selectedCollection = client
       .db("magicDanceArts")
       .collection("selected");
@@ -287,6 +295,31 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await selectedCollection.deleteOne(query);
       res.send(result);
+    });
+
+    // Stripe payment
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    // payment related api
+    app.post("/payments", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment);
+      const query = { _id: new ObjectId(payment.classesId) };
+      const deleteResult = await selectedCollection.deleteOne(query);
+
+      res.send({ insertResult, deleteResult });
     });
 
     // Send a ping to confirm a successful connection
