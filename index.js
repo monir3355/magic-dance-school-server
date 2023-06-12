@@ -153,7 +153,7 @@ async function run() {
     });
 
     // classes
-    app.get("/classes", async (req, res) => {
+    app.get("/classes", verifyJWT, async (req, res) => {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
@@ -170,6 +170,27 @@ async function run() {
       const addClass = req.body;
       const insertResult = await classCollection.insertOne(addClass);
       res.send(insertResult);
+    });
+
+    // classes update by instructor
+    app.patch("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedClasses = req.body;
+      console.log(updatedClasses);
+      const classes = {
+        $set: {
+          class_name: updatedClasses.class_name,
+          image: updatedClasses.image,
+          available_seats: updatedClasses.available_seats,
+          price: updatedClasses.price,
+          details: updatedClasses.details,
+          status: updatedClasses.status,
+        },
+      };
+      const result = await classCollection.updateOne(filter, classes, options);
+      res.send(result);
     });
 
     // classes approved
