@@ -49,6 +49,9 @@ async function run() {
       .db("magicDanceArts")
       .collection("instructors");
     const classCollection = client.db("magicDanceArts").collection("classes");
+    const selectedCollection = client
+      .db("magicDanceArts")
+      .collection("selected");
 
     // jwt
     app.post("/jwt", (req, res) => {
@@ -157,6 +160,13 @@ async function run() {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
+    // get approved classes
+    app.get("/approvedClasses", async (req, res) => {
+      const result = await classCollection
+        .find({ status: "approved" })
+        .toArray();
+      res.send(result);
+    });
 
     // get your all class by email
     app.get("/classes/:email", async (req, res) => {
@@ -178,7 +188,6 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updatedClasses = req.body;
-      console.log(updatedClasses);
       const classes = {
         $set: {
           class_name: updatedClasses.class_name,
@@ -245,6 +254,38 @@ async function run() {
     // Instructors
     app.get("/instructors", async (req, res) => {
       const result = await instructorCollection.find().toArray();
+      res.send(result);
+    });
+
+    // selected class get
+    app.get("/selectedClasses", async (req, res) => {
+      const result = await selectedCollection.find().toArray();
+      res.send(result);
+    });
+    // selected classes get by id
+    app.get("/mySelectedClasses/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await selectedCollection.findOne(query);
+      res.send(result);
+    });
+    app.post("/selectedClasses", async (req, res) => {
+      const user = req.body;
+      const query = { classId: user.classId };
+      const existingClass = await selectedCollection.findOne(query);
+      if (existingClass) {
+        res.status(400).send({ message: "Class already exists!" });
+      } else {
+        const result = await selectedCollection.insertOne(user);
+        res.send(result);
+      }
+    });
+
+    // deleted selected classes
+    app.delete("/selectedClasses/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await selectedCollection.deleteOne(query);
       res.send(result);
     });
 
