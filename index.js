@@ -313,13 +313,26 @@ async function run() {
     });
 
     // payment related api
+    // app.post("/payments", verifyJWT, async (req, res) => {
+    //   const payment = req.body;
+    //   const insertResult = await paymentCollection.insertOne(payment);
+    //   const query = { _id: new ObjectId(payment.classesId) };
+    //   const deleteResult = await selectedCollection.deleteOne(query);
+    //   res.send({ insertResult, deleteResult });
+    // });
+
+    // payment related api
     app.post("/payments", verifyJWT, async (req, res) => {
       const payment = req.body;
       const insertResult = await paymentCollection.insertOne(payment);
       const query = { _id: new ObjectId(payment.classesId) };
       const deleteResult = await selectedCollection.deleteOne(query);
-
-      res.send({ insertResult, deleteResult });
+      const updatedClass = await classCollection.findOneAndUpdate(
+        { _id: new ObjectId(payment.classClassId) },
+        { $inc: { enrolled_students: 1, available_seats: -1 } },
+        { returnOriginal: false }
+      );
+      res.send({ insertResult, deleteResult, updatedClass });
     });
 
     // Send a ping to confirm a successful connection
