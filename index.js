@@ -321,6 +321,15 @@ async function run() {
     //   res.send({ insertResult, deleteResult });
     // });
 
+    // payment history
+    app.get("/payments/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await paymentCollection
+        .find({ email: email })
+        .sort({ date: -1 }) // Sort by date in ascending order
+        .toArray();
+      res.send(result);
+    });
     // payment related api
     app.post("/payments", verifyJWT, async (req, res) => {
       const payment = req.body;
