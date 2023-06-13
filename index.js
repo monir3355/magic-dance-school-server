@@ -260,9 +260,21 @@ async function run() {
     });
 
     // Instructors
+    // app.get("/instructors", async (req, res) => {
+    //   const result = await instructorCollection.find().toArray();
+    //   res.send(result);
+    // });
+
     app.get("/instructors", async (req, res) => {
-      const result = await instructorCollection.find().toArray();
-      res.send(result);
+      try {
+        const result = await userCollection
+          .find({ role: "instructor" })
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error retrieving instructors:", error);
+        res.status(500).send("An error occurred while retrieving instructors.");
+      }
     });
 
     // selected class get
