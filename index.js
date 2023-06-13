@@ -259,6 +259,15 @@ async function run() {
       }
     });
 
+    // Popular classes
+    app.get("/popularClasses", async (req, res) => {
+      const result = await classCollection
+        .find({})
+        .sort({ enrolled_students: -1 })
+        .toArray();
+      res.send(result);
+    });
+
     // Instructors
     // app.get("/instructors", async (req, res) => {
     //   const result = await instructorCollection.find().toArray();
